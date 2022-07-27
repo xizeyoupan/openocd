@@ -2209,17 +2209,17 @@ int riscv_openocd_poll(struct target *target)
 				if (halt_reason == RISCV_HALT_BREAKPOINT) {
 					int retval;
 					switch (riscv_semihosting(t, &retval)) {
-					case SEMI_NONE:
-					case SEMI_WAITING:
+					case SEMIHOSTING_NONE:
+					case SEMIHOSTING_WAITING:
 						/* This hart should remain halted. */
 						should_remain_halted++;
 						break;
-					case SEMI_HANDLED:
+					case SEMIHOSTING_HANDLED:
 						/* This hart should be resumed, along with any other
 							 * harts that halted due to haltgroups. */
 						should_resume++;
 						break;
-					case SEMI_ERROR:
+					case SEMIHOSTING_ERROR:
 						return retval;
 					}
 				} else if (halt_reason != RISCV_HALT_GROUP) {
@@ -2280,15 +2280,15 @@ int riscv_openocd_poll(struct target *target)
 	if (target->debug_reason == DBG_REASON_BREAKPOINT) {
 		int retval;
 		switch (riscv_semihosting(target, &retval)) {
-			case SEMI_NONE:
-			case SEMI_WAITING:
+			case SEMIHOSTING_NONE:
+			case SEMIHOSTING_WAITING:
 				target_call_event_callbacks(target, TARGET_EVENT_HALTED);
 				break;
-			case SEMI_HANDLED:
+			case SEMIHOSTING_HANDLED:
 				if (riscv_resume(target, true, 0, 0, 0, false) != ERROR_OK)
 					return ERROR_FAIL;
 				break;
-			case SEMI_ERROR:
+			case SEMIHOSTING_ERROR:
 				return retval;
 		}
 	} else {
@@ -3114,7 +3114,6 @@ static const struct command_registration riscv_exec_command_handlers[] = {
  * protocol, then a command like `riscv semihosting enable` will make
  * sense, but for now all semihosting commands are prefixed with `arm`.
  */
-extern const struct command_registration semihosting_common_handlers[];
 
 const struct command_registration riscv_command_handlers[] = {
 	{

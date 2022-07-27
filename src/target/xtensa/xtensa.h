@@ -1,20 +1,9 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+
 /***************************************************************************
  *   Generic Xtensa target                                                 *
  *   Copyright (C) 2019 Espressif Systems Ltd.                             *
  *   Author: Alexey Gerenkov <alexey@espressif.com>                        *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 
 #ifndef OPENOCD_TARGET_XTENSA_H
@@ -301,6 +290,16 @@ void xtensa_set_permissive_mode(struct target *target, bool state);
 int xtensa_fetch_user_regs_u32(struct target *target);
 int xtensa_queue_write_dirty_user_regs_u32(struct target *target);
 const char *xtensa_get_gdb_arch(struct target *target);
+
+
+COMMAND_HELPER(xtensa_cmd_permissive_mode_do, struct xtensa *xtensa);
+COMMAND_HELPER(xtensa_cmd_mask_interrupts_do, struct xtensa *xtensa);
+COMMAND_HELPER(xtensa_cmd_smpbreak_do, struct target *target);
+COMMAND_HELPER(xtensa_cmd_perfmon_dump_do, struct xtensa *xtensa);
+COMMAND_HELPER(xtensa_cmd_perfmon_enable_do, struct xtensa *xtensa);
+COMMAND_HELPER(xtensa_cmd_tracestart_do, struct xtensa *xtensa);
+COMMAND_HELPER(xtensa_cmd_tracestop_do, struct xtensa *xtensa);
+COMMAND_HELPER(xtensa_cmd_tracedump_do, struct xtensa *xtensa, const char *fname);
 
 extern const struct reg_arch_type xtensa_user_reg_u32_type;
 extern const struct reg_arch_type xtensa_user_reg_u128_type;

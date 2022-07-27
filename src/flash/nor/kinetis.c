@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+
 /***************************************************************************
  *   Copyright (C) 2011 by Mathias Kuester                                 *
  *   kesmtp@freenet.de                                                     *
@@ -13,19 +15,6 @@
  *                                                                         *
  *   Copyright (C) 2015 Tomas Vanek                                        *
  *   vanekt@fbl.cz                                                         *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -402,16 +391,23 @@ static int kinetis_auto_probe(struct flash_bank *bank);
 
 static int kinetis_mdm_write_register(struct adiv5_dap *dap, unsigned reg, uint32_t value)
 {
-	int retval;
 	LOG_DEBUG("MDM_REG[0x%02x] <- %08" PRIX32, reg, value);
 
-	retval = dap_queue_ap_write(dap_ap(dap, MDM_AP), reg, value);
+	struct adiv5_ap *ap = dap_get_ap(dap, MDM_AP);
+	if (!ap) {
+		LOG_DEBUG("MDM: failed to get AP");
+		return ERROR_FAIL;
+	}
+
+	int retval = dap_queue_ap_write(ap, reg, value);
 	if (retval != ERROR_OK) {
 		LOG_DEBUG("MDM: failed to queue a write request");
+		dap_put_ap(ap);
 		return retval;
 	}
 
 	retval = dap_run(dap);
+	dap_put_ap(ap);
 	if (retval != ERROR_OK) {
 		LOG_DEBUG("MDM: dap_run failed");
 		return retval;
@@ -423,15 +419,21 @@ static int kinetis_mdm_write_register(struct adiv5_dap *dap, unsigned reg, uint3
 
 static int kinetis_mdm_read_register(struct adiv5_dap *dap, unsigned reg, uint32_t *result)
 {
-	int retval;
+	struct adiv5_ap *ap = dap_get_ap(dap, MDM_AP);
+	if (!ap) {
+		LOG_DEBUG("MDM: failed to get AP");
+		return ERROR_FAIL;
+	}
 
-	retval = dap_queue_ap_read(dap_ap(dap, MDM_AP), reg, result);
+	int retval = dap_queue_ap_read(ap, reg, result);
 	if (retval != ERROR_OK) {
 		LOG_DEBUG("MDM: failed to queue a read request");
+		dap_put_ap(ap);
 		return retval;
 	}
 
 	retval = dap_run(dap);
+	dap_put_ap(ap);
 	if (retval != ERROR_OK) {
 		LOG_DEBUG("MDM: dap_run failed");
 		return retval;
@@ -787,12 +789,18 @@ COMMAND_HANDLER(kinetis_check_flash_security_status)
 
 	if ((val & (MDM_STAT_SYSSEC | MDM_STAT_FREADY)) != MDM_STAT_FREADY) {
 		uint32_t stats[32];
+		struct adiv5_ap *ap = dap_get_ap(dap, MDM_AP);
+		if (!ap) {
+			LOG_ERROR("MDM: failed to get AP");
+			return ERROR_OK;
+		}
 
 		for (unsigned int i = 0; i < 32; i++) {
 			stats[i] = MDM_STAT_FREADY;
-			dap_queue_ap_read(dap_ap(dap, MDM_AP), MDM_REG_STAT, &stats[i]);
+			dap_queue_ap_read(ap, MDM_REG_STAT, &stats[i]);
 		}
 		retval = dap_run(dap);
+		dap_put_ap(ap);
 		if (retval != ERROR_OK) {
 			LOG_DEBUG("MDM: dap_run failed when validating secured state");
 			return ERROR_OK;

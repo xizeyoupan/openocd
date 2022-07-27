@@ -1,26 +1,16 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+
 /***************************************************************************
  *   ESP32-S2 target for OpenOCD                                           *
  *   Copyright (C) 2019 Espressif Systems Ltd.                             *
  *   Author: Alexey Gerenkov <alexey@espressif.com>                        *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <helper/time_support.h>
 #include "assert.h"
 #include <target/target.h>
 #include <target/target_type.h>
@@ -474,7 +464,7 @@ static int esp32s2_soc_reset(struct target *target)
 	res = esp32s2_set_peri_reg_mask(target,
 		ESP32_S2_OPTIONS0,
 		ESP32_S2_SW_SYS_RST_M,
-		1U << ESP32_S2_SW_SYS_RST_S);
+		BIT(ESP32_S2_SW_SYS_RST_S));
 	xtensa->suppress_dsr_errors = false;
 	if (res != ERROR_OK) {
 		LOG_ERROR("Failed to write ESP32_S2_OPTIONS0 (%d)!", res);
@@ -482,15 +472,16 @@ static int esp32s2_soc_reset(struct target *target)
 	}
 	/* Wait for SoC to reset */
 	alive_sleep(100);
-	int timeout = 100;
-	while (target->state != TARGET_RESET && target->state != TARGET_RUNNING && --timeout > 0) {
+	int64_t timeout = timeval_ms() + 100;
+	while (target->state != TARGET_RESET && target->state != TARGET_RUNNING) {
 		alive_sleep(10);
 		xtensa_poll(target);
+		if (timeval_ms() >= timeout) {
+			LOG_TARGET_ERROR(target, "Timed out waiting for CPU to be reset, target state=%d", target->state);
+			return ERROR_TARGET_TIMEOUT;
+		}
 	}
-	if (timeout == 0) {
-		LOG_ERROR("Timed out waiting for CPU to be reset, target->state=%d", target->state);
-		return ERROR_TARGET_TIMEOUT;
-	}
+
 	xtensa_halt(target);
 	res = target_wait_state(target, TARGET_HALTED, 1000);
 	if (res != ERROR_OK) {
