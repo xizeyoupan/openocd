@@ -78,6 +78,16 @@ extern const struct flash_driver w600_flash;
 extern const struct flash_driver xcf_flash;
 extern const struct flash_driver xmc1xxx_flash;
 extern const struct flash_driver xmc4xxx_flash;
+extern const struct flash_driver at32f403xx_flash;
+extern const struct flash_driver at32f413xx_flash;
+extern const struct flash_driver at32f415xx_flash;
+extern const struct flash_driver at32f403axx_flash;
+extern const struct flash_driver at32f407xx_flash;
+extern const struct flash_driver at32wb415xx_flash;
+extern const struct flash_driver at32f421xx_flash;
+extern const struct flash_driver at32f425xx_flash;
+extern const struct flash_driver at32f435xx_flash;
+extern const struct flash_driver at32f437xx_flash;
 
 /**
  * The list of built-in flash drivers.
@@ -153,6 +163,16 @@ static const struct flash_driver * const flash_drivers[] = {
 	&xmc1xxx_flash,
 	&xmc4xxx_flash,
 	&w600_flash,
+	&at32f403xx_flash,
+	&at32f413xx_flash,
+	&at32f415xx_flash,
+	&at32f403axx_flash,
+	&at32f407xx_flash,
+	&at32wb415xx_flash,
+	&at32f421xx_flash,
+	&at32f425xx_flash,
+	&at32f435xx_flash,
+	&at32f437xx_flash,
 	NULL,
 };
 
