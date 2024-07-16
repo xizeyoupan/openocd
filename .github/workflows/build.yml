@@ -4,66 +4,66 @@ name: Build OpenOCD Mac & Linux & Windows
 on:
   push:
   workflow_dispatch:
-jobs:
-  build-mac:
-    runs-on: macos-11
-    env:
-      BUILD_DIR: build
-    steps:
-      - uses: actions/checkout@v2
-      - name: install deps
-        run: brew install libtool automake texinfo coreutils pkg-config cmake gnu-sed
-      - name: build
-        env:
-          MAKE_JOBS: 2
-        run: |
-          export PATH=/usr/local/bin:$PATH
-          export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
-          export CFLAGS=-mmacosx-version-min=10.9
-          export LDFLAGS="-F/System/Library/Frameworks -framework Foundation -framework AppKit -framework IOKit -framework Security"
+# jobs:
+#   build-mac:
+#     runs-on: macos-11
+#     env:
+#       BUILD_DIR: build
+#     steps:
+#       - uses: actions/checkout@v2
+#       - name: install deps
+#         run: brew install libtool automake texinfo coreutils pkg-config cmake gnu-sed
+#       - name: build
+#         env:
+#           MAKE_JOBS: 2
+#         run: |
+#           export PATH=/usr/local/bin:$PATH
+#           export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
+#           export CFLAGS=-mmacosx-version-min=10.9
+#           export LDFLAGS="-F/System/Library/Frameworks -framework Foundation -framework AppKit -framework IOKit -framework Security"
 
-          export PREFIX="$(realpath $BUILD_DIR)/opt"
-          export BUILD_FOLD="$(realpath $BUILD_DIR)/libs"
-          mkdir -p $PREFIX $BUILD_FOLD
+#           export PREFIX="$(realpath $BUILD_DIR)/opt"
+#           export BUILD_FOLD="$(realpath $BUILD_DIR)/libs"
+#           mkdir -p $PREFIX $BUILD_FOLD
 
-          #LIBUSB1
-          export LIBUSB1_VER=1.0.26
-          git clone https://github.com/libusb/libusb && cd libusb && git checkout tags/v$LIBUSB1_VER -b v$LIBUSB1_VER && ./bootstrap.sh
-          ./configure --prefix="$PREFIX" --disable-shared
-          make install
+#           #LIBUSB1
+#           export LIBUSB1_VER=1.0.26
+#           git clone https://github.com/libusb/libusb && cd libusb && git checkout tags/v$LIBUSB1_VER -b v$LIBUSB1_VER && ./bootstrap.sh
+#           ./configure --prefix="$PREFIX" --disable-shared
+#           make install
 
-          #HIDAPI
-          export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-          export HIDAPI_VER=0.11.2
-          cd $BUILD_FOLD && git clone https://github.com/libusb/hidapi && cd hidapi && git checkout tags/hidapi-$HIDAPI_VER -b $HIDAPI_VER && ./bootstrap 
-          cmake -DCMAKE_INSTALL_PREFIX="$PREFIX" -DBUILD_SHARED_LIBS=false -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9
-          make install
+#           #HIDAPI
+#           export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+#           export HIDAPI_VER=0.11.2
+#           cd $BUILD_FOLD && git clone https://github.com/libusb/hidapi && cd hidapi && git checkout tags/hidapi-$HIDAPI_VER -b $HIDAPI_VER && ./bootstrap 
+#           cmake -DCMAKE_INSTALL_PREFIX="$PREFIX" -DBUILD_SHARED_LIBS=false -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9
+#           make install
 
-          #LIBFTDI
-          export LIBFTDI_VER=1.5
-          cd $BUILD_FOLD && git clone git://developer.intra2net.com/libftdi && cd libftdi && git checkout tags/v$LIBFTDI_VER -b v$LIBFTDI_VER
-          sed -i "24,39s/^/# /" ./src/CMakeLists.txt 
-          cmake -DCMAKE_INSTALL_PREFIX="$PREFIX" -DSTATICLIBS=ON -DEXAMPLES=OFF -DFTDI_EEPROM=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 ./
-          make install
+#           #LIBFTDI
+#           export LIBFTDI_VER=1.5
+#           cd $BUILD_FOLD && git clone git://developer.intra2net.com/libftdi && cd libftdi && git checkout tags/v$LIBFTDI_VER -b v$LIBFTDI_VER
+#           sed -i "24,39s/^/# /" ./src/CMakeLists.txt 
+#           cmake -DCMAKE_INSTALL_PREFIX="$PREFIX" -DSTATICLIBS=ON -DEXAMPLES=OFF -DFTDI_EEPROM=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 ./
+#           make install
 
-          #CAPSTONE
-          export CAPSTONE_VER=4.0.2
-          cd $BUILD_FOLD && git clone https://github.com/capstone-engine/capstone.git && cd capstone && git checkout tags/$CAPSTONE_VER -b $CAPSTONE_VER
-          make install PREFIX="$PREFIX" CAPSTONE_BUILD_CORE_ONLY=yes CAPSTONE_STATIC=yes CAPSTONE_SHARED=no CAPSTONE_ARCHS="arm"
+#           #CAPSTONE
+#           export CAPSTONE_VER=4.0.2
+#           cd $BUILD_FOLD && git clone https://github.com/capstone-engine/capstone.git && cd capstone && git checkout tags/$CAPSTONE_VER -b $CAPSTONE_VER
+#           make install PREFIX="$PREFIX" CAPSTONE_BUILD_CORE_ONLY=yes CAPSTONE_STATIC=yes CAPSTONE_SHARED=no CAPSTONE_ARCHS="arm"
 
-          cd $PREFIX/../..
-          ./bootstrap
-          ./configure --prefix="$PREFIX/openocd" --disable-werror --disable-doxygen-html --with-capstone
-          make 
-          make install-strip
+#           cd $PREFIX/../..
+#           ./bootstrap
+#           ./configure --prefix="$PREFIX/openocd" --disable-werror --disable-doxygen-html --with-capstone
+#           make 
+#           make install-strip
 
-          echo "ARTIFACT_PATH=$PREFIX/openocd" >> $GITHUB_ENV
+#           echo "ARTIFACT_PATH=$PREFIX/openocd" >> $GITHUB_ENV
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: openocd-mac
-          path: ${{ env.ARTIFACT_PATH }}/*
+#       - name: Upload artifact
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: openocd-mac
+#           path: ${{ env.ARTIFACT_PATH }}/*
 
   build-linux:
     runs-on: ubuntu-20.04
